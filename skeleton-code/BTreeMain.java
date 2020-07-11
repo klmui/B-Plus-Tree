@@ -3,6 +3,7 @@ import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+import java.util.Random;
 
 /**
  * Main Application.
@@ -11,9 +12,12 @@ import java.util.Scanner;
  */
 public class BTreeMain {
 
-    public static void main(String[] args) {
+  public static void main(String[] args) {
 
-        /** Read the input file -- input.txt */
+      /** Create random number generator **/  
+      Random randGen = new Random();
+      
+      /** Read the input file -- input.txt */
         Scanner scan = null;
         try {
             scan = new Scanner(new File("src/input.txt"));
@@ -52,7 +56,7 @@ public class BTreeMain {
                             String level = s2.next();
                             int age = Integer.parseInt(s2.next());
                             /** TODO: Write a logic to generate recordID*/
-                            long recordID = ;
+                            long recordID = randGen.nextLong();
 
                             Student s = new Student(studentId, age, studentName, major, level, recordID);
                             bTree.insert(s);
@@ -94,14 +98,13 @@ public class BTreeMain {
         }
     }
 
-    private static List<Student> getStudents() {
+  private static List<Student> getStudents() {
 
-        /** TODO:
-         * Extract the students information from "Students.csv"
-         * return the list<Students>
-         */
+    /**
+     * TODO: Extract the students information from "Students.csv" return the list<Students>
+     */
 
-        List<Student> studentList = new ArrayList<>();
-        return studentList;
-    }
+    List<Student> studentList = new ArrayList<>();
+    return studentList;
+  }
 }
