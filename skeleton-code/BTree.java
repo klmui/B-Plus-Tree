@@ -4,7 +4,7 @@
 
 import java.util.ArrayList;
 import java.util.List;
-//import application.BTree.BTreeNode;
+// import application.BTree.BTreeNode;
 
 /**
  * B+Tree Structure Key - StudentId Leaf Node should contain [ key,recordId ]
@@ -33,7 +33,7 @@ class BTree {
      */
 
     BTreeNode foundNode = search(this.root, studentId);
-    
+
     if (foundNode == null) {
       System.out.println("The provided ID has not been found in the table.");
       return -1;
@@ -43,7 +43,7 @@ class BTree {
     }
 
 
-    //return -1;
+    // return -1;
   }
 
   private BTreeNode search(BTreeNode current, long studentId) {
@@ -52,9 +52,9 @@ class BTree {
     for (int i = 0; i < current.keys.size(); i++) {
       if (current.keys.get(i) == studentId) {
         return current;
-      } 
+      }
     }
-    
+
     // if the current node isn't a leaf node, find the child node to move to.
     if (!current.leaf) {
       int i = 1;
@@ -66,9 +66,7 @@ class BTree {
       return null;
     }
 
-
-
-    //return null;
+    // return null;
   }
 
   BTree insert(Student student) {
@@ -79,11 +77,26 @@ class BTree {
 
     BTreeNode current = this.root;
 
-    if (current == null) {
-      current = new BTreeNode(t, true);
-      // TODO write to CSV
-      return this;
+    // check whether the ID already exists (no duplicates)
+    long id = student.studentId;
+    long exists = search(id);
+
+    // if the ID doesn't already exist in the tree, continue with the insert
+    if (exists == -1) {
+      
+      // if the root is null, create a new node
+      if (current == null) {
+        current = new BTreeNode(t, true);
+        // TODO write to CSV
+        return this;
+      }
+
+    } else {
+      System.out.println("That ID already exists!");
+      return null;
     }
+
+
 
     // check whether the Student exists in the tree
     return this;
