@@ -139,8 +139,8 @@ class BTree {
       }
 
       // move to the child node
-      if (current.children.get(i - 1) != null) {
-        insert(current.children.get(i - 1), student);
+      if (current.children.get(i) != null) {
+        insert(current.children.get(i), student);
       }
     }
 
@@ -272,8 +272,8 @@ class BTree {
         // current.values.subList(0, (from - 1)).clear();
 
         // add children
-        this.addChild(current, node1);
-        this.addChild(current, node2);
+        this.addChild(parent, node1);
+        this.addChild(parent, node2);
         // current.children.add(node1);
         // current.children.add(node2);
 
@@ -419,7 +419,7 @@ class BTree {
       while ((i < current.getNumKeys()) && (current.keys.get(i) <= id)) {
         i++;
       }
-      return exists(id, current.children.get(i - 1));
+      return exists(id, current.children.get(i));
     } else { // if it is a leaf, the id doesn't exist
       return false;
     }
