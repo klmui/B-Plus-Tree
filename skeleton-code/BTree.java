@@ -293,8 +293,116 @@ class BTree {
      * deleting in B+Tree, if it exists. Return true if the student is deleted successfully
      * otherwise, return false.
      */
+    // search to see if the node exists:  search(BTreeNode current, long studentId)
+    long exists = search(studentId);
+    if (exists == -1) { // student id is not found
+      return false;
+    } 
+    
+    // start at the root and compare studentId to the one we want. 
+    // if key doesn't exist in the root, which child tree to go to.
+    if (this.root != null && this.root.leaf) {
+      // find studentId
+      
+      // delete studentId
+      
+      // if needed, merge, etc.
+    } 
+    
+    if (!this.root.leaf) { // if the root is an internal node, find the subtree
+      int i = 0;
+      while ((i + 1 <= root.keys.size()) && (studentId >= root.keys.get(i))) {
+        i++;
+      }
+      
+      // recursive helper
+      deleteHelper(this.root.children.get(i), studentId);
+    }
+    
+    BTreeNode current = root;
+    // go down the tree to find the leaf node, starting from the leaf:
+    boolean studentIdFound = false; 
+    int indexOfKeyToDelete; 
+    if (current.leaf == true){ // we are in the leaf node
+      for (int i = 0; i < current.keys.size(); i++) {
+        long leafVal = current.keys.get(i);
+        if (leafVal == studentId) {
+          studentIdFound = true;
+          indexOfKeyToDelete = i; 
+          break;
+        }
+      }
+    } else { // we are not at the leaf node and need to keep going down. 
+      ArrayList<Long> listOfEntries = current.keys;
+
+      boolean firstItIsLessThan = false; 
+      int indexToUse; 
+      int i = 0;
+      while ((i + 1 <= listOfEntries.size()) && (studentId >= listOfEntries.get(i))) {
+        i++;
+      }
+      // we found the index that we should go down on. 
+
+      
+//      for (int i = 0; i < listOfEntries.size(); i++) {
+//        long currentEntry = listOfEntries.get(i);
+//        if (currentEntry >= studentId) {
+//          firstItIsLessThan = true; // we take the first entry where there is equality or studentId is less than the value in the node
+//          indexToUse = i;
+//          break;
+//        }
+//      }
+//      if (firstItIsLessThan == false) { // the key is greater than all values in the current node
+//        indexToUse = listOfEntries.size() - 1; // we will go into the rightmost node
+//      }
+      
+      
+      
+    }
+    
+
+    
+    
     return true;
   }
+  
+  
+  
+  private void deleteHelper(BTreeNode node, long studentID) {
+    BTreeNode current = node;
+    
+    // base case: leaf node
+    if (current.leaf == true) {
+      // find studentID
+      int index = current.keys.indexOf(studentID);
+      current.keys.remove(index);
+      // delete it
+      int numOfKeysInNode = current.keys.size();
+      int minNumOfSpots = t;
+      if (numOfKeysInNode >= minNumOfSpots) {
+        return;
+      } else {
+        // see about redistribution:
+        ArrayList<Long> nextLeafNode = current.next.keys;
+        if (nextLeafNode == null) { // MERGING
+          // could be the rightmost child and then redistribution isn't possible
+          // or could be the only child
+        } 
+        
+        int numOfKeysInNextNode = nextLeafNode.size();
+        if (numOfKeysInNextNode >= minNumOfSpots) { // redistribution
+          
+        } else { // MERGING
+          
+        }
+        
+      }      
+      // merge, etc
+    }
+    
+    
+  }
+  
 
   /**
    * Helpful sources: https://www.geeksforgeeks.org/print-leaf-nodes-left-right-binary-tree/
