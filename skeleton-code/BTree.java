@@ -302,21 +302,26 @@ class BTree {
     // start at the root and compare studentId to the one we want. 
     // if key doesn't exist in the root, which child tree to go to.
     if (this.root != null && this.root.leaf) {
-      // find studentId
+      // find studentId and remove from b-tree
+      int index = root.keys.indexOf(studentId);
+      root.keys.remove(index);
       
-      // delete studentId
+      // TODO: remove from csv
       
-      // if needed, merge, etc.
+      return true;
     } 
     
-    if (!this.root.leaf) { // if the root is an internal node, find the subtree
+    if (!this.root.leaf) { // if the studentId is in an internal node, find the subtree
       int i = 0;
+      // First check is making sure loop is within bounds and the second one is finding the index that belongs to the studentId
+      // or 1 greater than it
       while ((i + 1 <= root.keys.size()) && (studentId >= root.keys.get(i))) {
         i++;
       }
       
       // recursive helper
-      deleteHelper(this.root.children.get(i), studentId);
+      // Could be i or i - 1
+      deleteHelper(this.root.children.get(i), studentId, i);
     }
     
     BTreeNode current = root;
@@ -332,7 +337,7 @@ class BTree {
           break;
         }
       }
-    } else { // we are not at the leaf node and need to keep going down. 
+    } else { // we are not at the leaf node and need to keep going down 
       ArrayList<Long> listOfEntries = current.keys;
 
       boolean firstItIsLessThan = false; 
@@ -341,59 +346,71 @@ class BTree {
       while ((i + 1 <= listOfEntries.size()) && (studentId >= listOfEntries.get(i))) {
         i++;
       }
-      // we found the index that we should go down on. 
-
-      
-//      for (int i = 0; i < listOfEntries.size(); i++) {
-//        long currentEntry = listOfEntries.get(i);
-//        if (currentEntry >= studentId) {
-//          firstItIsLessThan = true; // we take the first entry where there is equality or studentId is less than the value in the node
-//          indexToUse = i;
-//          break;
-//        }
-//      }
-//      if (firstItIsLessThan == false) { // the key is greater than all values in the current node
-//        indexToUse = listOfEntries.size() - 1; // we will go into the rightmost node
-//      }
-      
+      // we found the index that we should go down on
       
       
     }
-    
-
-    
     
     return true;
   }
   
   
-  
-  private void deleteHelper(BTreeNode node, long studentID) {
+  /**
+   * 
+   * @param node
+   * @param studentID
+   * @param index: index of pointer
+   */
+  private void deleteHelper(BTreeNode node, long studentID, int indexOfPtr) {
     BTreeNode current = node;
     
     // base case: leaf node
     if (current.leaf == true) {
       // find studentID
-      int index = current.keys.indexOf(studentID);
-      current.keys.remove(index);
+      int indexInLeaf = current.keys.indexOf(studentID);
       // delete it
+      current.keys.remove(indexInLeaf);
+      
+      // ensure node meets min occupancy req
       int numOfKeysInNode = current.keys.size();
       int minNumOfSpots = t;
       if (numOfKeysInNode >= minNumOfSpots) {
         return;
       } else {
+        // min occupancy rate isn't met
         // see about redistribution:
         ArrayList<Long> nextLeafNode = current.next.keys;
         if (nextLeafNode == null) { // MERGING
           // could be the rightmost child and then redistribution isn't possible
           // or could be the only child
+          
+          // find parent of node to merge with left child
+          BTreeNode parent = this.findParent(root, node);
+          BTreeNode leftSibling = parent.children.get(indexOfPtr - 1);
         } 
         
         int numOfKeysInNextNode = nextLeafNode.size();
-        if (numOfKeysInNextNode >= minNumOfSpots) { // redistribution
+        if (numOfKeysInNextNode > minNumOfSpots) { 
+          // redistribution
           
-        } else { // MERGING
+          // Step 1: take the first element of the nextLeafNode and move into the last
+          // element of the previous node (node)
+          long firstStudentIdInNextNode = nextLeafNode.get(0);
+          nextLeafNode.remove(0);
+          current.keys.add(firstStudentIdInNextNode); // add to the end of the previous
           
+          // Step 2: Update parent to be the new leftmost value of nextLeafNode
+          BTreeNode parent = this.findParent(root, node);
+          parent.keys.set(indexOfPtr, nextLeafNode.get(0)); 
+        } else { 
+          // MERGING (next node is unable to give up 1 studentId since it will 
+          // no longer meet min. occupancy req. if it does so)
+          
+          // Step 1: find common parent of both leaf nodes
+          
+          // Step 2: merge both leaf nodes - copy all values from right node to the left node
+          
+          // Step 3: Delete parent node at indexOfPtr
         }
         
       }      
@@ -455,11 +472,35 @@ class BTree {
 
     return null;
   }
-
+  
+  /**
+   * Merges values from right node into left node.
+   * 
+   * Saves the next ptr of the right node and sets it as 
+   * the next ptr of the left node (combined node).
+   * 
+   * Delete the parent index ptr and set its new parent ptr to be its
+   * current one + 1
+   * 
+   * Uses recursion to check if parent nodes satisfy capacity constraints
+   * 
+   * @param node
+   * @return
+   */
   private BTreeNode merge(BTreeNode node) {
     // TODO
 
     return null;
+  }
+  
+  /**
+   * If node (inner node) does not satisfy capacity constraints,
+   * 
+   * 
+   * 
+   */
+  private void ensureCapacity(BTreeNode node) {
+    
   }
 
   private BTreeNode findParent(BTreeNode root, BTreeNode node) {
