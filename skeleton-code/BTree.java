@@ -257,10 +257,7 @@ class BTree {
       // find studentID
       int indexInLeaf = current.keys.indexOf(studentID);
       // delete it
-      System.out.println("Index before Deleted from Leaf Nodoe: " + current.keys);
       current.keys.remove(indexInLeaf);
-      System.out.println(":) Index Deleted: " + indexInLeaf);
-      System.out.println("Index Deleted from Leaf Nodoe: " + current.keys);
     }
     
     // ensure node meets min occupancy req

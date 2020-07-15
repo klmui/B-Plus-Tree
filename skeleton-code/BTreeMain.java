@@ -41,7 +41,7 @@ public class BTreeMain {
     for (Student s : studentsDB) {
       bTree.insert(s);
       // FIXME remove before submitting
-      System.out.println(bTree.print());
+      //System.out.println(bTree.print());
     }
 
 
