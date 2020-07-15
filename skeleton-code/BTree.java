@@ -721,7 +721,7 @@ class BTree {
    * If there is only 1 leaf node (the root is the leaf), this returns the root
    * @return
    */
-  public BTreeNode findLeftMostLeafNode() {
+  private BTreeNode findLeftMostLeafNode() {
     System.out.println("findLeftMostLeafNode()");
     // the root is the only leaf node so we return this
     if (root.getNumChildren() == 0 || root.leaf == true) {
@@ -745,7 +745,7 @@ class BTree {
    * StudentIDToDelete is -1 is we do not want to delete anything from the Tree
    * Otherwise, it will have the Student ID to Delete
    */
-  public void writeCSV(String filePath, long StudentIDToDelete) {
+  private void writeCSV(String filePath, long StudentIDToDelete) {
     try {
     FileWriter csvWriter = new FileWriter(filePath);
     
