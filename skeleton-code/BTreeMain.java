@@ -65,6 +65,7 @@ public class BTreeMain {
               int age = Integer.parseInt(s2.next());
 
               long recordID = randGen.nextLong();
+              s2.next();
 
               Student s = new Student(studentId, age, studentName, major, level, recordID);
               //bTree.insert(s);

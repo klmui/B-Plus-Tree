@@ -45,17 +45,19 @@ class BTreeNode {
         //this.keys = new long[2 * t - 1];
         //this.children = new BTreeNode[2 * t];
         this.children = new ArrayList<>();
-        for (int i = 0; i <= (2 * t); i++) { // initialize array with nulls
-          this.children.add(null);
-        }
+    /*
+     * for (int i = 0; i <= (2 * t); i++) { // initialize array with nulls this.children.add(null);
+     * }
+     */
         
         this.n = 0;
         this.next = null;
         //this.values = new long[2 * t - 1];
         this.values = new ArrayList<>();
-        for (int i = 0; i <= (2 * t - 1); i++) { // initialize array with nulls
-          this.values.add(null);
-        }
+    /*
+     * for (int i = 0; i <= (2 * t - 1); i++) { // initialize array with nulls
+     * this.values.add(null); }
+     */
     }
     
     /**
