@@ -38,253 +38,46 @@ class BTree {
       return -1;
     }
 
-    BTreeNode foundNode = search(this.root, studentId);
-
-    if (foundNode == null) {
-      System.out.println("The provided ID has not been found in the table.");
-      return -1;
-    } else {
-      int index = foundNode.keys.indexOf(studentId);
-      return foundNode.values.get(index);
-    }
-
-
-    // return -1;
-  }
-
-  private BTreeNode search(BTreeNode current, long studentId) {
-
-    // check whether the current node has the key
-    for (int i = 0; i < current.keys.size(); i++) {
-      if ((current.keys.get(i) != null) && (current.keys.get(i) == studentId)) {
-        return current;
-      }
-    }
-
-    // if the current node isn't a leaf node, find the child node to move to.
-    if (!current.leaf) {
-      int i = 1;
-      while (i <= current.getNumKeys() && studentId > current.keys.get(i - 1)) {
-        i++;
-      }
-      return search(current.children.get(i - 1), studentId);
-    } else { // if it is a leaf, the id doesn't exist
-      return null;
-    }
-
-    // return null;
-  }
-
-  BTree insert(Student student) {
-    /**
-     * TODO: Implement this function to insert in the B+Tree. Also, insert in student.csv after
-     * inserting in B+Tree.
-     */
-
-
-
-    if (this.root == null) { // if the root is null, create the first node
-      this.root = new BTreeNode(t, true);
-      this.root.keys.add(0, student.studentId);
-      this.root.values.add(0, student.recordId);
-
-      // FIXME remove after testing
-      System.out.println("Student " + student.studentName + " (ID: " + student.studentId + ")"
-          + " has been added.");
-
-      // TODO write to CSV
-
-      return this;
-    }
-
     BTreeNode current = this.root;
+    long recordId = search(current, studentId);
 
-    // check whether the ID already exists (no duplicates)
-    long id = student.studentId;
-    boolean exists = exists(id, current);
+    return recordId;
 
-    // if the ID doesn't already exist in the tree, continue with the insert
-    if (!exists) {
-      insert(current, student);
-    } else {
-      System.out.println("A student with that ID already exists.");
-    }
-
-
-
-    // check whether the Student exists in the tree
-    return this;
   }
 
-  /**
-   * Helpful source for split:
-   * https://github.com/jiaguofang/b-plus-tree/blob/master/src/main/java/com/jgfanng/algo/BPlusTree.java
-   * 
-   * Helpful source for I/O: https://stackabuse.com/reading-and-writing-csvs-in-java/
-   * 
-   * @param bTreeNode
-   * @param student
-   */
-  private void insert(BTreeNode bTreeNode, Student student) {
-
-    BTreeNode current = bTreeNode;
-    long id = student.studentId;
-
-    // if the current node is an internal node
-    if (current.leaf == false) {
-      // find the index of the child node to move to
-      int i = 0;
-      while ((i + 1 <= current.getNumKeys()) && (id >= current.keys.get(i))) {
-        i++;
+  private long search(BTreeNode current, long studentId) {
+    // check whether the current node has the key
+    // if the current node isn't a leaf node, find the child node to move to.
+    long recordId = -1;
+    
+    if (current.leaf) { // base case
+      int index = current.keys.indexOf(studentId);
+      
+      if (index == -1) {
+        return recordId;
+      } else {
+        recordId = current.values.get(index);
+        return recordId;
       }
-
-      // move to the child node
-      if (current.children.get(i - 1) != null) {
-        insert(current.children.get(i - 1), student);
-      }
+     
     }
-
-    // if the current node is a leaf node
-    if (current.leaf) {
-      // check if the current node has space
-      if (current.getNumKeys() <= ((2 * t - 1))) {
-        // add the key
-        current.keys.add(id);
-
-        // sort the key elements from smallest to largest
-        current.keys.sort(null);
-
-        // get the index of the newly added id
-        int index = current.keys.indexOf(id);
-        // TODO write to CSV
-
-        // add the value in the corresponding index
-        current.values.set(index, student.recordId);
-
-        // FIXME remove after testing
-        System.out.println("Student " + student.studentName + " (ID: " + student.studentId + ")"
-            + " has been added.");
-        return;
-        /*
-         * for (int i = 0; i < current.keys.size(); i++) { if (current.keys.get(i) <= id) { if ((i +
-         * 1 < current.getNumKeys()) && (id < current.keys.get(i + 1))) { // add the key and value
-         * current.keys.add(i, id); current.values.add(i, student.recordId); // FIXME remove after
-         * testing System.out.println("Student " + student.studentName + " has been added."); //
-         * TODO write to CSV
-         * 
-         * break; } } else { continue; } }
-         */
-      } else { // if the leaf does not have room, split
-
-        BTreeNode parent = findParent(this.root, current); // find the parent node
-        BTreeNode node1 = new BTreeNode(t, true); // create first new node
-        BTreeNode node2 = new BTreeNode(t, true); // create second new node
-
-        // add the new key and value, which will cause overflow
-        // add the key
-        current.keys.add(id);
-
-        // sort the key elements from smallest to largest
-        current.keys.sort(null);
-
-        // get the index of the newly added id
-        int index = current.keys.indexOf(id);
-        // TODO write to CSV
-
-        // add the value in the corresponding index
-        current.values.set(index, student.recordId);
-        // FIXME remove after testing
-        System.out.println("Student " + student.studentName + " (ID: " + student.studentId + ")"
-            + " has been added.");
-
-        /*
-         * for (int i = 0; i < current.keys.size(); i++) { if (id <= current.keys.get(i)) {
-         * current.keys.add(i, id); current.values.add(i, student.recordId); // FIXME remove after
-         * testing System.out.println("Student " + student.studentName + " (ID: " +
-         * student.studentId + ")" + " has been added."); }
-         */
-        // }
-
-        if (parent == null) { // no parent means current == root
-          // copy keys from this node to the new node
-          int from = (current.getNumKeys() + 1) / 2;
-          int to = current.getNumKeys() - 1;
-
-          node1.keys.addAll(current.keys.subList(0, from));
-
-          List<Long> node1Values = current.values.subList(0, from);
-          for (int i = 0; i < from; i++) {
-            node1.values.set(i, node1Values.get(i));
-          }
-          // node1.values.addAll(current.values.subList(0, from));
-
-          node2.keys.addAll(current.keys.subList(from, to + 1));
-
-          // copy values from this node to the new node
-          List<Long> node2Values = current.values.subList(from, to + 1);
-          for (int i = 0; i < node2Values.size(); i++) {
-            node2.values.set(i, node2Values.get(i));
-          }
-
-
-          // node2.values.addAll(current.values.subList(from, to + 1));
-
-          // clear copied keys and values from current node
-          current.keys.subList(from, to + 1).clear();
-          current.keys.subList(0, (from - 1)).clear();
-          current.values.clear();
-          // current.values.subList(from, to).clear();
-          // current.values.subList(0, (from - 1)).clear();
-
-          // add children
-          this.addChild(current, node1);
-          this.addChild(current, node2);
-          // current.children.add(node1);
-          // current.children.add(node2);
-
-          // set next pointer
-          // node2.next = node1.next;
-          // node1.next = node2;
-          // current.next = null;
-
-          this.root = current;
-          this.root.leaf = false;
-          return;
+    
+    if (!current.leaf) {
+      if (studentId < current.keys.get(0)) {
+        recordId = search(current.children.get(0), studentId);
+      } else if (studentId >= current.keys.get(current.keys.size() - 1)) {
+        recordId = search(current.children.get(current.keys.size() - 1), studentId);
+      } else {
+        int i = 1;
+        while (studentId >= current.keys.get(i)) {
+          i++;
         }
 
-        // copy keys from this node to the new node
-        int from = (current.getNumKeys() + 1) / 2;
-        int to = current.getNumKeys() - 1;
-
-        node1.keys.addAll(current.keys.subList(0, from));
-        node1.values.addAll(current.values.subList(0, from));
-
-        node2.keys.addAll(current.keys.subList(from, to + 1));
-
-        // copy values from this node to the new node
-        node2.values.addAll(current.values.subList(from, to + 1));
-
-        // clear copied keys and values from current node
-        current.keys.subList(from, to + 1).clear();
-        current.keys.subList(0, (from - 1)).clear();
-        current.values.clear();
-        // current.values.subList(from, to).clear();
-        // current.values.subList(0, (from - 1)).clear();
-
-        // add children
-        this.addChild(current, node1);
-        this.addChild(current, node2);
-        // current.children.add(node1);
-        // current.children.add(node2);
-
-        // set next pointer
-        // node2.next = node1.next;
-        // node1.next = node2;
-        // current.next = null;
-
-
+        recordId = search(current.children.get(i), studentId);
       }
     }
+
+    return recordId;
   }
 
   boolean delete(long studentId) {
@@ -293,84 +86,84 @@ class BTree {
      * deleting in B+Tree, if it exists. Return true if the student is deleted successfully
      * otherwise, return false.
      */
-    // search to see if the node exists:  search(BTreeNode current, long studentId)
+    // search to see if the node exists: search(BTreeNode current, long studentId)
     long exists = search(studentId);
     if (exists == -1) { // student id is not found
       return false;
-    } 
-    
-    // start at the root and compare studentId to the one we want. 
+    }
+
+    // start at the root and compare studentId to the one we want.
     // if key doesn't exist in the root, which child tree to go to.
     if (this.root != null && this.root.leaf) {
       // find studentId
-      
+
       // delete studentId
-      
+
       // if needed, merge, etc.
-    } 
-    
+    }
+
     if (!this.root.leaf) { // if the root is an internal node, find the subtree
       int i = 0;
       while ((i + 1 <= root.keys.size()) && (studentId >= root.keys.get(i))) {
         i++;
       }
-      
+
       // recursive helper
       deleteHelper(this.root.children.get(i), studentId);
     }
-    
+
     BTreeNode current = root;
     // go down the tree to find the leaf node, starting from the leaf:
-    boolean studentIdFound = false; 
-    int indexOfKeyToDelete; 
-    if (current.leaf == true){ // we are in the leaf node
+    boolean studentIdFound = false;
+    int indexOfKeyToDelete;
+    if (current.leaf == true) { // we are in the leaf node
       for (int i = 0; i < current.keys.size(); i++) {
         long leafVal = current.keys.get(i);
         if (leafVal == studentId) {
           studentIdFound = true;
-          indexOfKeyToDelete = i; 
+          indexOfKeyToDelete = i;
           break;
         }
       }
-    } else { // we are not at the leaf node and need to keep going down. 
+    } else { // we are not at the leaf node and need to keep going down.
       ArrayList<Long> listOfEntries = current.keys;
 
-      boolean firstItIsLessThan = false; 
-      int indexToUse; 
+      boolean firstItIsLessThan = false;
+      int indexToUse;
       int i = 0;
       while ((i + 1 <= listOfEntries.size()) && (studentId >= listOfEntries.get(i))) {
         i++;
       }
-      // we found the index that we should go down on. 
+      // we found the index that we should go down on.
 
-      
-//      for (int i = 0; i < listOfEntries.size(); i++) {
-//        long currentEntry = listOfEntries.get(i);
-//        if (currentEntry >= studentId) {
-//          firstItIsLessThan = true; // we take the first entry where there is equality or studentId is less than the value in the node
-//          indexToUse = i;
-//          break;
-//        }
-//      }
-//      if (firstItIsLessThan == false) { // the key is greater than all values in the current node
-//        indexToUse = listOfEntries.size() - 1; // we will go into the rightmost node
-//      }
-      
-      
-      
+
+      // for (int i = 0; i < listOfEntries.size(); i++) {
+      // long currentEntry = listOfEntries.get(i);
+      // if (currentEntry >= studentId) {
+      // firstItIsLessThan = true; // we take the first entry where there is equality or studentId
+      // is less than the value in the node
+      // indexToUse = i;
+      // break;
+      // }
+      // }
+      // if (firstItIsLessThan == false) { // the key is greater than all values in the current node
+      // indexToUse = listOfEntries.size() - 1; // we will go into the rightmost node
+      // }
+
+
+
     }
-    
 
-    
-    
+
+
     return true;
   }
-  
-  
-  
+
+
+
   private void deleteHelper(BTreeNode node, long studentID) {
     BTreeNode current = node;
-    
+
     // base case: leaf node
     if (current.leaf == true) {
       // find studentID
@@ -387,22 +180,111 @@ class BTree {
         if (nextLeafNode == null) { // MERGING
           // could be the rightmost child and then redistribution isn't possible
           // or could be the only child
-        } 
-        
+        }
+
         int numOfKeysInNextNode = nextLeafNode.size();
         if (numOfKeysInNextNode >= minNumOfSpots) { // redistribution
-          
+
         } else { // MERGING
-          
+
         }
-        
-      }      
+
+      }
       // merge, etc
     }
-    
-    
+
+
   }
-  
+
+
+  BTree insert(Student student) {
+    /**
+     * TODO: Implement this function to insert in the B+Tree. Also, insert in student.csv after
+     * inserting in B+Tree.
+     */
+
+    // if the root is null
+    if (this.root == null) {
+      this.root = new BTreeNode(t, true);
+      this.root.keys.add(0, student.studentId);
+      this.root.values.add(0, student.recordId);
+
+      // TODO write to CSV
+      System.out.println("Student " + student.studentName + " (ID: " + student.studentId + ")"
+          + " has been added.");
+
+      return this;
+    }
+
+    // check whether a student with that ID already exists
+    if (exists(student.studentId, this.root)) {
+      System.out.println("A student with that ID already exists.");
+      return this;
+    }
+
+    // recursively insert the new ID
+    insert(this.root, student);
+    return this;
+
+  }
+
+  /**
+   * Helpful source for split:
+   * https://github.com/jiaguofang/b-plus-tree/blob/master/src/main/java/com/jgfanng/algo/BPlusTree.java
+   * 
+   * Helpful source for I/O: https://stackabuse.com/reading-and-writing-csvs-in-java/
+   * 
+   * @param bTreeNode
+   * @param student
+   */
+  private void insert(BTreeNode current, Student student) {
+
+    long id = student.studentId;
+    long recordId = student.recordId;
+
+    // if the current node is an internal node
+    if (current.leaf == false) {
+
+      // find the subtree to move to
+      if (id < current.keys.get(0)) {
+        // go to leftmost subtree
+        insert(current.children.get(0), student);
+
+      } else if (id >= current.keys.get(current.keys.size() - 1)) {
+        // go to rightmost subtree
+        insert(current.children.get(current.children.size() - 1), student);
+
+      } else { // find which subtree to move to
+        int i = 0;
+        while (i < current.keys.size()) {
+          if (id >= current.keys.get(i)) {
+            insert(current.children.get(i), student);
+            break;
+          } else {
+            i++;
+          }
+        }
+      }
+    }
+
+    if (current.leaf) { // if the current node is a leaf node
+      insertKeyValue(current, id, recordId);
+
+      // TODO write to CSV
+
+      // FIXME remove after testing
+      System.out.println("Student " + student.studentName + " (ID: " + student.studentId + ")"
+          + " has been added.");
+
+      if (current.keys.size() > (2 * t)) { // if the current node is full after insert, split
+
+        splitLeaf(current);
+
+      } else { // if the current node is full, split it
+        return;
+      }
+    }
+  }
 
   /**
    * Helpful sources: https://www.geeksforgeeks.org/print-leaf-nodes-left-right-binary-tree/
@@ -450,16 +332,115 @@ class BTree {
     return list;
   }
 
-  private BTreeNode split(BTreeNode node) {
+  /**
+   * 
+   * @param parent  the parent node of current
+   * @param current the current node we're attempting to insert into
+   * @param node1
+   * @param node2
+   * @param student
+   * @return
+   */
+  private BTreeNode splitInternal(BTreeNode current) {
     // TODO
+    BTreeNode parent = findParent(this.root, current); // find the parent node
+    BTreeNode newSibling = new BTreeNode(t, true); // create first new node
+    BTreeNode node2 = new BTreeNode(t, true); // create second new node
+
+    // move (# keys - d) keys and values to the new node
+    int i = 0; // index for new sibling's keys
+    for (int j = (current.keys.size() - t); j < current.keys.size(); j++) {
+      newSibling.keys.add(i, current.keys.get(j));
+      newSibling.values.set(i, current.values.get(j));
+      i++;
+    }
+
+    // update sibling pointers
+    if (parent != null) {
+      current.next = newSibling;
+    }
+
+    if (parent == null) {
+
+    }
 
     return null;
+  }
+
+  private void splitLeaf(BTreeNode node) {
+    // TODO
+
+    BTreeNode parent = findParent(this.root, node);
+    BTreeNode newNode = new BTreeNode(t, true);
+
+    long separator = node.keys.get((node.keys.size() - 1) / 2); // node to push up
+
+    // move (# keys - d) keys and values to the new node
+
+    newNode.keys.addAll(node.keys.subList(t, node.keys.size()));
+    newNode.values.addAll(node.values.subList(t, node.values.size()));
+
+    node.keys.subList(t, node.keys.size()).clear();
+    node.values.subList(t, node.values.size()).clear();
+
+    if (parent == null) { // null parent means we split the root node
+      this.root = new BTreeNode(t, false);
+      this.root.keys.add(separator);
+      addChild(this.root, node);
+      addChild(this.root, newNode);
+    } else { // if we have a non-null parent
+      // add the separator key to the parent node
+      if (separator < parent.keys.get(0)) {
+        parent.keys.add(0, separator);
+      } else if (separator >= parent.keys.get(parent.keys.size() - 1)) {
+        parent.keys.add(separator);
+      } else {
+        int i = 1;
+        while (i < parent.keys.size() - 1) {
+          if (separator > parent.keys.get(i)) {
+            i++;
+          } else {
+            break;
+          }
+        }
+
+        parent.keys.add(i, separator);
+      }
+
+      addChild(parent, newNode);
+    }
   }
 
   private BTreeNode merge(BTreeNode node) {
     // TODO
 
     return null;
+  }
+
+  private boolean exists(long id, BTreeNode current) {
+    // check whether the current node has the key
+
+    if (current.keys.contains(id)) {
+      return true;
+    }
+
+    /*
+     * for (int i = 0; i < current.keys.size(); i++) { if ((current.keys.get(i) != null) &&
+     * (current.keys.get(i) == id)) { return true; } }
+     */
+
+    // if the current node isn't a leaf node, find the child node to move to.
+    if (!current.leaf) {
+      int i = 0;
+      while ((i < current.getNumKeys()) && (current.keys.get(i) <= id)) {
+        i++;
+      }
+      return exists(id, current.children.get(i - 1));
+    } else { // if it is a leaf, the id doesn't exist
+      return false;
+    }
+
+    // return false;
   }
 
   private BTreeNode findParent(BTreeNode root, BTreeNode node) {
@@ -509,84 +490,54 @@ class BTree {
     return null;
   }
 
-  private boolean exists(long id, BTreeNode current) {
-    // check whether the current node has the key
-
-    if (current.keys.contains(id)) {
-      return true;
-    }
-
-    /*
-     * for (int i = 0; i < current.keys.size(); i++) { if ((current.keys.get(i) != null) &&
-     * (current.keys.get(i) == id)) { return true; } }
-     */
-
-    // if the current node isn't a leaf node, find the child node to move to.
-    if (!current.leaf) {
-      int i = 0;
-      while ((i < current.getNumKeys()) && (current.keys.get(i) <= id)) {
-        i++;
-      }
-      return exists(id, current.children.get(i - 1));
-    } else { // if it is a leaf, the id doesn't exist
-      return false;
-    }
-
-    // return false;
-  }
-
   private void addChild(BTreeNode parent, BTreeNode child) {
 
-    long minKey = child.keys.get(0);
-    int i = 0;
+    long maxKey = child.keys.get(child.keys.size() - 1);
 
-    boolean empty = true;
-
-    for (int j = 0; j < parent.children.size(); j++) { // check if the child list is empty
-      if (parent.children.get(j) != null) {
-        empty = false;
-        break;
-      }
-    }
-
-    // find the index just past where the child node should go
-    while ((i < parent.keys.size()) && minKey > parent.keys.get(i)) {
-      i++;
-    }
-
-    if (empty) { // if it's empty, add the child at index 0
-      parent.children.set(0, child);
-      return;
-      // } else if (i == 0){
-
-    } else { // if it's not empty, find where the child should go
-
-      if (parent.children.get(i) == null) { // if this child slot is empty, add the child node
-        parent.children.set(i, child);
-      }
-
-      // update the next pointers
-      for (int j = 0; j < parent.children.size(); j++) {
-        BTreeNode childToUpdate;
-
-        if (parent.children.get(j) != null) { // select a child node
-          childToUpdate = parent.children.get(j);
-
-          // find the next non-null child node
-          for (int k = j + 1; k < parent.children.size(); k++) {
-            if (parent.children.get(k) != null) {
-              childToUpdate.next = parent.children.get(k);
-              break;
-            }
-          }
-
-          continue;
+    if (maxKey < parent.keys.get(0)) {
+      parent.children.add(0, child);
+      // return;
+    } else if (maxKey >= parent.keys.get(parent.keys.size() - 1)) {
+      parent.children.add(child);
+      // return;
+    } else {
+      for (int i = 1; i < parent.keys.size() - 1; i++) {
+        if (maxKey >= parent.keys.get(i)) {
+          parent.children.add(i, child);
+          break;
         }
-
-
       }
     }
 
+    // update sibling pointers
+    for (int i = 0; i < parent.children.size() - 1; i++) {
+      parent.children.get(i).next = parent.children.get(i + 1);
+    }
+  }
 
+  private void insertKeyValue(BTreeNode node, long studentId, long recordId) {
+
+    // if it's smaller than the smallest key in the node
+    if (studentId < node.keys.get(0)) {
+      node.keys.add(0, studentId);
+      node.values.add(0, recordId);
+
+    } else if (studentId > node.keys.get(node.keys.size() - 1)) { // if bigger than biggest key
+      node.keys.add(studentId);
+      node.values.add(recordId);
+    } else {
+      int i = 1;
+      while (i < node.keys.size() - 1) {
+        if (studentId > node.keys.get(i)) {
+          i++;
+        } else {
+          break;
+        }
+      }
+
+      node.keys.add(i, studentId);
+      node.values.add(i, recordId);
+
+    }
   }
 }
