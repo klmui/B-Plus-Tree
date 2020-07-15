@@ -95,19 +95,6 @@ class BTree {
     }
   }
   
-  private BTreeNode nodeWithID(long studentId) {
-    // iterate through the BTree and see if the studentId is in that leaf node
-    
-    //  if exists() then we do this, else we return null
-    // we go all the way to the left most leaf node.  then check 
-    // and keep going to next, until we find the node with the student id
-    // we call the searchNode for each o
-    BTreeNode nodeWithId = searchNode(root, studentId);
-    return nodeWithId;
-    
-    
-  }
-  
   // index in searchNode with the element
   // check method sees if a given node meets the minimum requirements for cap by ensureCapacity method
   private int findIndex(BTreeNode current, long studentId) {
@@ -120,48 +107,35 @@ class BTree {
     return -1;
   }
   
-  
-  
-
   BTree insert(Student student) {
     /**
      * TODO: Implement this function to insert in the B+Tree. Also, insert in student.csv after
      * inserting in B+Tree.
      */
 
-
-
-    if (this.root == null) { // if the root is null, create the first node
+    // if the root is null
+    if (this.root == null) {
       this.root = new BTreeNode(t, true);
       this.root.keys.add(0, student.studentId);
       this.root.values.add(0, student.recordId);
 
-      // FIXME remove after testing
+      // TODO write to CSV
       System.out.println("Student " + student.studentName + " (ID: " + student.studentId + ")"
           + " has been added.");
-
-      // TODO write to CSV
 
       return this;
     }
 
-    BTreeNode current = this.root;
-
-    // check whether the ID already exists (no duplicates)
-    long id = student.studentId;
-    boolean exists = exists(id, current);
-
-    // if the ID doesn't already exist in the tree, continue with the insert
-    if (!exists) {
-      insert(current, student);
-    } else {
+    // check whether a student with that ID already exists
+    if (exists(student.studentId, this.root)) {
       System.out.println("A student with that ID already exists.");
+      return this;
     }
 
-
-
-    // check whether the Student exists in the tree
+    // recursively insert the new ID
+    insert(this.root, student);
     return this;
+
   }
 
   /**
@@ -173,42 +147,53 @@ class BTree {
    * @param bTreeNode
    * @param student
    */
-  private void insert(BTreeNode bTreeNode, Student student) {
+  private void insert(BTreeNode current, Student student) {
 
-    BTreeNode current = bTreeNode;
     long id = student.studentId;
+    long recordId = student.recordId;
 
     // if the current node is an internal node
     if (current.leaf == false) {
-      // find the index of the child node to move to
-      int i = 0;
-      while ((i + 1 <= current.getNumKeys()) && (id >= current.keys.get(i))) {
-        i++;
-      }
 
-      // move to the child node
-      if (current.children.get(i - 1) != null) {
-        insert(current.children.get(i - 1), student);
+      // find the subtree to move to
+      if (id < current.keys.get(0)) {
+        // go to leftmost subtree
+        insert(current.children.get(0), student);
+
+      } else if (id >= current.keys.get(current.keys.size() - 1)) {
+        // go to rightmost subtree
+        insert(current.children.get(current.children.size() - 1), student);
+
+      } else { // find which subtree to move to
+        int i = 0;
+        while (i < current.keys.size()) {
+          if (id >= current.keys.get(i)) {
+            insert(current.children.get(i), student);
+            break;
+          } else {
+            i++;
+          }
+        }
       }
-     
     }
     
-    if (!current.leaf) {
-      if (studentId < current.keys.get(0)) {
-        recordId = search(current.children.get(0), studentId);
-      } else if (studentId >= current.keys.get(current.keys.size() - 1)) {
-        recordId = search(current.children.get(current.keys.size() - 1), studentId);
-      } else {
-        int i = 1;
-        while (studentId >= current.keys.get(i)) {
-          i++;
-        }
+    if (current.leaf) { // if the current node is a leaf node
+      insertKeyValue(current, id, recordId);
 
-        recordId = search(current.children.get(i), studentId);
+      // TODO write to CSV
+
+      // FIXME remove after testing
+      System.out.println("Student " + student.studentName + " (ID: " + student.studentId + ")"
+          + " has been added.");
+
+      if (current.keys.size() > (2 * t)) { // if the current node is full after insert, split
+
+        splitLeaf(current);
+
+      } else { // if the current node is full, split it
+        return;
       }
     }
-
-    return recordId;
   }
 
   boolean delete(long studentId) {
@@ -247,49 +232,7 @@ class BTree {
       currentNode = childNode;
       
     }
-    
     deleteHelper(currentNode, studentId);
-    
-//    if (!this.root.leaf) { // if the studentId is in an internal node, find the subtree
-//      int i = 0;
-//      // First check is making sure loop is within bounds and the second one is finding the index that belongs to the studentId
-//      // or 1 greater than it
-//      while ((i + 1 <= root.keys.size()) && (studentId >= root.keys.get(i))) {
-//        i++;
-//      }
-      
-      // recursive helper
-      // Could be i or i - 1
-//      deleteHelper(c, studentId);
-//    }
-    
-//    BTreeNode current = root;
-//    // go down the tree to find the leaf node, starting from the leaf:
-//    boolean studentIdFound = false; 
-//    int indexOfKeyToDelete; 
-//    if (current.leaf == true){ // we are in the leaf node
-//      for (int i = 0; i < current.keys.size(); i++) {
-//        long leafVal = current.keys.get(i);
-//        if (leafVal == studentId) {
-//          studentIdFound = true;
-//          indexOfKeyToDelete = i; 
-//          break;
-//        }
-//      }
-//    } else { // we are not at the leaf node and need to keep going down 
-//      ArrayList<Long> listOfEntries = current.keys;
-//
-//      boolean firstItIsLessThan = false; 
-//      int indexToUse; 
-//      int i = 0;
-//      while ((i + 1 <= listOfEntries.size()) && (studentId >= listOfEntries.get(i))) {
-//        i++;
-//      }
-//      // we found the index that we should go down on
-//      
-//      
-//    }
-    
     return true;
   }
   
@@ -314,7 +257,10 @@ class BTree {
       // find studentID
       int indexInLeaf = current.keys.indexOf(studentID);
       // delete it
+      System.out.println("Index before Deleted from Leaf Nodoe: " + current.keys);
       current.keys.remove(indexInLeaf);
+      System.out.println(":) Index Deleted: " + indexInLeaf);
+      System.out.println("Index Deleted from Leaf Nodoe: " + current.keys);
     }
     
     // ensure node meets min occupancy req
@@ -580,12 +526,6 @@ class BTree {
       addChild(parent, newNode);
     }
   }
-
-  private BTreeNode merge(BTreeNode node) {
-    // TODO
-
-    return null;
-  }
   
   /**
    * This checks to see if a given node has met the capacity constraints
@@ -625,11 +565,10 @@ class BTree {
   
   
   private int findPtrIndexGivenAnId(BTreeNode node, long studentId) {
-    BTreeNode parent = this.findParent(this.root, node);
     int i = 0;
     // First check is making sure loop is within bounds and the second one is finding the index that belongs to the studentId
     // or 1 greater than it
-    while ((i + 1 <= parent.keys.size()) && (studentId >= parent.keys.get(i))) {
+    while ((i + 1 <= node.keys.size()) && (studentId >= node.keys.get(i))) {
       i++;
     }
     
