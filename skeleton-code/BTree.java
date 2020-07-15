@@ -323,6 +323,10 @@ class BTree {
      */
     // search to see if the node exists:  search(BTreeNode current, long studentId)
     long exists = search(studentId);
+    BTreeNode nodeWithID = searchNode(root, studentId);
+    
+    
+    
     if (exists == -1) { // student id is not found
       return false;
     } 
@@ -338,19 +342,30 @@ class BTree {
       
       return true;
     } 
+
+    BTreeNode currentNode = this.root;
     
-    if (!this.root.leaf) { // if the studentId is in an internal node, find the subtree
-      int i = 0;
-      // First check is making sure loop is within bounds and the second one is finding the index that belongs to the studentId
-      // or 1 greater than it
-      while ((i + 1 <= root.keys.size()) && (studentId >= root.keys.get(i))) {
-        i++;
-      }
+    while ((!currentNode.equals(nodeWithID) && (!currentNode.leaf))) {
+      int pointerIndex = findPtrIndexGivenAnId(currentNode, studentId);
+      BTreeNode childNode = currentNode.children.get(pointerIndex);
+      currentNode = childNode;
+      
+    }
+    
+    deleteHelper(currentNode, studentId);
+    
+//    if (!this.root.leaf) { // if the studentId is in an internal node, find the subtree
+//      int i = 0;
+//      // First check is making sure loop is within bounds and the second one is finding the index that belongs to the studentId
+//      // or 1 greater than it
+//      while ((i + 1 <= root.keys.size()) && (studentId >= root.keys.get(i))) {
+//        i++;
+//      }
       
       // recursive helper
       // Could be i or i - 1
-      deleteHelper(this.root.children.get(i), studentId);
-    }
+//      deleteHelper(c, studentId);
+//    }
     
 //    BTreeNode current = root;
 //    // go down the tree to find the leaf node, starting from the leaf:
@@ -524,19 +539,15 @@ class BTree {
         // we reassign the root now to be this value:
         this.root = leftNodeNext;
         return;
-        
-        
-        
-        
       } else { // the parent is another internal node or a root with more than 1 key        
       
         for (long key: node.keys) {
           leftNodeNext.keys.add(key);
         }
-        leftNodeNext = null;
+        node = null;
+        
         // Remove parent with node
         parent.keys.remove(leftParentIndex);
-        
         
         // Keep structure of tree
         if (ensureCapacity(parent)) {
@@ -545,9 +556,7 @@ class BTree {
           deleteHelper(parent, studentID);
         }
       } 
-    }
-    // if parent is the root
-      
+    }      
   }
 
 
@@ -604,26 +613,6 @@ class BTree {
   }
   
   /**
-   * Merges values from right node into left node.
-   * 
-   * Saves the next ptr of the right node and sets it as 
-   * the next ptr of the left node (combined node).
-   * 
-   * Delete the parent index ptr and set its new parent ptr to be its
-   * current one + 1
-   * 
-   * Uses recursion to check if parent nodes satisfy capacity constraints
-   * 
-   * @param node
-   * @return
-   */
-  private BTreeNode merge(BTreeNode node) {
-    // TODO
-
-    return null;
-  }
-  
-  /**
    * This checks to see if a given node has met the capacity constraints
    * 
    * 
@@ -658,6 +647,20 @@ class BTree {
       return null;
     }
   }
+  
+  
+  private int findPtrIndexGivenAnId(BTreeNode node, long studentId) {
+    BTreeNode parent = this.findParent(this.root, node);
+    int i = 0;
+    // First check is making sure loop is within bounds and the second one is finding the index that belongs to the studentId
+    // or 1 greater than it
+    while ((i + 1 <= parent.keys.size()) && (studentId >= parent.keys.get(i))) {
+      i++;
+    }
+    
+    return i;
+  }
+  
   
   private int findPrePtrIndex(BTreeNode node) {
     BTreeNode parent = this.findParent(this.root, node);
