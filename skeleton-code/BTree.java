@@ -2,6 +2,8 @@
  * Do NOT modify. This is the class with the main function
  */
 
+import java.io.BufferedReader;
+import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.List;
 // import application.BTree.BTreeNode;
@@ -206,7 +208,9 @@ class BTree {
     long exists = search(studentId);
     BTreeNode nodeWithID = searchNode(root, studentId);
     
-    
+    String filePath = "Student.csv";
+    System.out.println("filePath: " + filePath);
+    writeCSV(filePath, studentId);
     
     if (exists == -1) { // student id is not found
       return false;
@@ -709,4 +713,102 @@ class BTree {
 
     }
   }
-}
+  
+  
+  /**
+   * Please note that this method goes to the bottom left and finds the leftmost
+   * leaf node (the smallest leaf node) in the BTree. 
+   * If there is only 1 leaf node (the root is the leaf), this returns the root
+   * @return
+   */
+  public BTreeNode findLeftMostLeafNode() {
+    System.out.println("findLeftMostLeafNode()");
+    // the root is the only leaf node so we return this
+    if (root.getNumChildren() == 0 || root.leaf == true) {
+      return root; 
+    } else {
+      // the root has children, so we keep going left (index 0):
+      BTreeNode current = root.children.get(0);
+      while (current.leaf == false) {
+        current = current.children.get(0);
+      }
+      return current;
+    }
+    
+    
+  }
+  
+  
+  /**
+   * Please note that this method writes out the Btree to a CSV.  
+   * It only skips over the student id that is to be deleted if there is one
+   * StudentIDToDelete is -1 is we do not want to delete anything from the Tree
+   * Otherwise, it will have the Student ID to Delete
+   */
+  public void writeCSV(String filePath, long StudentIDToDelete) {
+    try {
+    FileWriter csvWriter = new FileWriter(filePath);
+    
+    csvWriter.append("StudentID");
+    csvWriter.append(","); // comma-separated
+    csvWriter.append("RecordID");
+    csvWriter.append("\n");
+    // please go all the way to the bottom left of the tree    
+    // all entries (and student records) will be in leaf node of B+ tree
+    // the left most node has the start
+    BTreeNode leftmostLeafNode = findLeftMostLeafNode(); 
+    //if the root is the only node (and is therefore also the leaf node) 
+    
+    if (leftmostLeafNode.equals(root)) {
+      for (int i = 0; i < root.getNumKeys(); i++) {
+        long studentID = root.keys.get(i); 
+        if (studentID == StudentIDToDelete) { // we skip writing out this entry
+          continue;
+        } else {
+        long recordID = root.values.get(i); 
+        char studentIdChar = (char) studentID;
+        char recordIdChar = (char) recordID;
+        csvWriter.append(studentIdChar);
+        csvWriter.append(",");
+        csvWriter.append(recordIdChar);
+        csvWriter.append("\n");
+        }
+        
+      }
+    } else {
+      BTreeNode current = leftmostLeafNode; // we start with this leftmost node and then keep going to next
+      while (current.next != null) {
+        for (int i = 0; i < current.keys.size(); i++) {
+          long studentID = root.keys.get(i); 
+          if (studentID == StudentIDToDelete) { // we skip writing out this entry
+            continue;
+          } else {
+          long recordID = root.values.get(i); 
+          char studentIdChar = (char) studentID;
+          char recordIdChar = (char) recordID;
+          csvWriter.append(studentIdChar);
+          csvWriter.append(",");
+          csvWriter.append(recordIdChar);
+          csvWriter.append("\n");
+          }
+        }
+        current = current.next; // we go to the next leaf node (the right node)
+        
+      }
+    }
+    csvWriter.close();
+      System.out.println(":) Please note that we have written the (studentID, recordID) results to: " + filePath);
+    } catch (Exception e) {
+      System.out.println("Error :( Please note we were unable to write the B+ Tree out to: " + filePath);
+
+      System.out.println(e.getStackTrace());
+    } 
+    
+    
+    
+  }
+  }
+  
+  
+  
+
