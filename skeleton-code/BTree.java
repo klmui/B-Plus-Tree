@@ -38,7 +38,7 @@ class BTree {
       return -1;
     }
 
-    BTreeNode foundNode = search(this.root, studentId);
+    BTreeNode foundNode = searchNode(this.root, studentId);
 
     if (foundNode == null) {
       System.out.println("The provided ID has not been found in the table.");
@@ -52,7 +52,7 @@ class BTree {
     // return -1;
   }
 
-  private BTreeNode search(BTreeNode current, long studentId) {
+  private BTreeNode searchNode(BTreeNode current, long studentId) {
 
     // check whether the current node has the key
     for (int i = 0; i < current.keys.size(); i++) {
@@ -67,13 +67,41 @@ class BTree {
       while (i <= current.getNumKeys() && studentId > current.keys.get(i - 1)) {
         i++;
       }
-      return search(current.children.get(i - 1), studentId);
+      return searchNode(current.children.get(i - 1), studentId);
     } else { // if it is a leaf, the id doesn't exist
       return null;
     }
 
     // return null;
   }
+  
+  private BTreeNode nodeWithID(long studentId) {
+    // iterate through the BTree and see if the studentId is in that leaf node
+    
+    //  if exists() then we do this, else we return null
+    // we go all the way to the left most leaf node.  then check 
+    // and keep going to next, until we find the node with the student id
+    // we call the searchNode for each o
+    BTreeNode nodeWithId = searchNode(root, studentId);
+    return nodeWithId;
+    
+    
+  }
+  
+  // index in searchNode with the element
+  // check method sees if a given node meets the minimum requirements for cap by ensureCapacity method
+  private int findIndex(BTreeNode current, long studentId) {
+    //BTreeNode nodeWithId = searchNode(root, studentId);
+    for (int i = 0; i < current.keys.size(); i++) {
+      if (current.keys.get(i) == studentId) {
+        return i;
+      }
+    }
+    return -1;
+  }
+  
+  
+  
 
   BTree insert(Student student) {
     /**
@@ -321,105 +349,207 @@ class BTree {
       
       // recursive helper
       // Could be i or i - 1
-      deleteHelper(this.root.children.get(i), studentId, i);
+      deleteHelper(this.root.children.get(i), studentId);
     }
     
-    BTreeNode current = root;
-    // go down the tree to find the leaf node, starting from the leaf:
-    boolean studentIdFound = false; 
-    int indexOfKeyToDelete; 
-    if (current.leaf == true){ // we are in the leaf node
-      for (int i = 0; i < current.keys.size(); i++) {
-        long leafVal = current.keys.get(i);
-        if (leafVal == studentId) {
-          studentIdFound = true;
-          indexOfKeyToDelete = i; 
-          break;
-        }
-      }
-    } else { // we are not at the leaf node and need to keep going down 
-      ArrayList<Long> listOfEntries = current.keys;
-
-      boolean firstItIsLessThan = false; 
-      int indexToUse; 
-      int i = 0;
-      while ((i + 1 <= listOfEntries.size()) && (studentId >= listOfEntries.get(i))) {
-        i++;
-      }
-      // we found the index that we should go down on
-      
-      
-    }
+//    BTreeNode current = root;
+//    // go down the tree to find the leaf node, starting from the leaf:
+//    boolean studentIdFound = false; 
+//    int indexOfKeyToDelete; 
+//    if (current.leaf == true){ // we are in the leaf node
+//      for (int i = 0; i < current.keys.size(); i++) {
+//        long leafVal = current.keys.get(i);
+//        if (leafVal == studentId) {
+//          studentIdFound = true;
+//          indexOfKeyToDelete = i; 
+//          break;
+//        }
+//      }
+//    } else { // we are not at the leaf node and need to keep going down 
+//      ArrayList<Long> listOfEntries = current.keys;
+//
+//      boolean firstItIsLessThan = false; 
+//      int indexToUse; 
+//      int i = 0;
+//      while ((i + 1 <= listOfEntries.size()) && (studentId >= listOfEntries.get(i))) {
+//        i++;
+//      }
+//      // we found the index that we should go down on
+//      
+//      
+//    }
     
     return true;
   }
   
   
   /**
+   * Delete node with studentId and keep structure of tree.
    * 
    * @param node
    * @param studentID
    * @param index: index of pointer
    */
-  private void deleteHelper(BTreeNode node, long studentID, int indexOfPtr) {
+  private void deleteHelper(BTreeNode node, long studentID) {
     BTreeNode current = node;
     
-    // base case: leaf node
+    // base case:  current node is the root, so we are done
+    if(node.equals(root)) {
+      return;
+    }
+    
+    // base case: leaf node - found the node that contains the studentID as a key
     if (current.leaf == true) {
       // find studentID
       int indexInLeaf = current.keys.indexOf(studentID);
       // delete it
       current.keys.remove(indexInLeaf);
-      
-      // ensure node meets min occupancy req
-      int numOfKeysInNode = current.keys.size();
-      int minNumOfSpots = t;
-      if (numOfKeysInNode >= minNumOfSpots) {
-        return;
-      } else {
-        // min occupancy rate isn't met
-        // see about redistribution:
-        ArrayList<Long> nextLeafNode = current.next.keys;
-        if (nextLeafNode == null) { // MERGING
-          // could be the rightmost child and then redistribution isn't possible
-          // or could be the only child
-          
-          // find parent of node to merge with left child
-          BTreeNode parent = this.findParent(root, node);
-          BTreeNode leftSibling = parent.children.get(indexOfPtr - 1);
-        } 
-        
-        int numOfKeysInNextNode = nextLeafNode.size();
-        if (numOfKeysInNextNode > minNumOfSpots) { 
-          // redistribution
-          
-          // Step 1: take the first element of the nextLeafNode and move into the last
-          // element of the previous node (node)
-          long firstStudentIdInNextNode = nextLeafNode.get(0);
-          nextLeafNode.remove(0);
-          current.keys.add(firstStudentIdInNextNode); // add to the end of the previous
-          
-          // Step 2: Update parent to be the new leftmost value of nextLeafNode
-          BTreeNode parent = this.findParent(root, node);
-          parent.keys.set(indexOfPtr, nextLeafNode.get(0)); 
-        } else { 
-          // MERGING (next node is unable to give up 1 studentId since it will 
-          // no longer meet min. occupancy req. if it does so)
-          
-          // Step 1: find common parent of both leaf nodes
-          
-          // Step 2: merge both leaf nodes - copy all values from right node to the left node
-          
-          // Step 3: Delete parent node at indexOfPtr
-        }
-        
-      }      
-      // merge, etc
     }
     
+    // ensure node meets min occupancy req
+    if (ensureCapacity(node)) {
+      return;
+    }
+      
+      
+    // min occupancy rate isn't met
+    // see about redistribution:
     
+    // 1st attempt: Look right and try to take keys
+    BTreeNode rightNode = this.getRightSibling(node);
+    if (rightNode != null && this.ensureCapacity(rightNode)) {
+      // Take keys from right node
+      long firstStudentIdInRightNode = rightNode.keys.get(0);
+      rightNode.keys.remove(0);
+      node.keys.add(firstStudentIdInRightNode);
+      
+      // Update parent node
+      BTreeNode parent = this.findParent(root, node);
+      int parentPtrIndex = this.findPrePtrIndex(node);
+      parent.keys.set(parentPtrIndex, firstStudentIdInRightNode);
+      
+      return;
+    }
+    
+    // 2nd attempt: Look left and try to take keys
+    BTreeNode leftNode = this.getLeftSibling(node);
+    if (leftNode != null && this.ensureCapacity(leftNode)) {
+      // Take keys from right node
+      long firstStudentIdInLeftNode = leftNode.keys.get(0);
+      leftNode.keys.remove(0);
+      node.keys.add(0, firstStudentIdInLeftNode);
+      
+      // Update parent node
+      BTreeNode parent = this.findParent(root, node);
+      int parentPtrIndex = this.findPrePtrIndex(node);
+      parent.keys.set(parentPtrIndex, firstStudentIdInLeftNode);
+      
+      return;
+    }
+    
+    // 3rd attempt: merge right node into left node
+    if (rightNode != null) {
+        BTreeNode parent = this.findParent(root, node);
+        int oldParentIndex = findPrePtrIndex(node);
+        
+        // Store next ref ptr from rightNode and update node's next ptr
+        BTreeNode rightNodeNext = rightNode.next;
+        node.next = rightNodeNext;
+        int newParentIndex = findPrePtrIndex(rightNode);
+        
+        if (parent.equals(root) && (root.getNumKeys() == 1 || root.getNumChildren() <= 2)) {
+          // RED0 THE ROOT AND UPDATE IT
+          // we are an internal node and we have a right node we are merging on
+          // Bring down key from root into oldParentIndex and merge, and reassign root
+
+          long rootKey = root.keys.get(0); // this is the only element in the root
+          // our parent is the root:
+          // merging will lead to problems with just 1 child
+          // we need to reassign our root
+          node.keys.add(rootKey); // we add this root there (in terms of order from least to greatest)
+          
+          // Left: node values, Middle: root key, Right: right node values
+          for (long key: rightNode.keys) {
+            node.keys.add(key);
+          }
+          // we reassign the root now to be this value:
+          this.root = node;
+          return;
+        } else { // the parent is another internal node or a root with more than 1 key 
+        
+          // set the value of the node's pointer to be the rightNode pointer (30, 30 instead of 27, 30)
+          parent.keys.set(oldParentIndex, parent.keys.get(newParentIndex));
+          
+          // Putting all values from right node into node
+          for (long key : rightNode.keys) {
+            node.keys.add(key);
+          }
+          
+          rightNode = null;
+          
+          // Remove parent with node
+          parent.keys.remove(newParentIndex);
+          
+          // Keep structure of tree
+          if (ensureCapacity(parent)) {
+            return;
+          } else {
+            deleteHelper(parent, studentID);
+          }
+          
+          return;
+        }
+    }
+      
+    // 4th attempt: merge left node into right node
+    if (leftNode != null) {  // move entries from rightmost node into the left node
+        BTreeNode parent = this.findParent(root, node);
+        int oldParentIndex = findPrePtrIndex(node);
+        int leftParentIndex = oldParentIndex - 1;
+   
+        BTreeNode leftNodeNext = parent.children.get(leftParentIndex); // left node
+      
+      if (parent.equals(root) && (root.getNumKeys() == 1 || root.getNumChildren() <= 2)) {
+        
+        long rootKey = root.keys.get(0); // this is the only element in the root
+        // our parent is the root:
+        // merging will lead to problems with just 1 child
+        // we need to reassign our root
+        leftNodeNext.keys.add(rootKey); // we add this root there (in terms of order from least to greatest)
+        
+        for (long key: node.keys) {
+          leftNodeNext.keys.add(key);
+        }
+       
+        // we reassign the root now to be this value:
+        this.root = leftNodeNext;
+        return;
+        
+        
+        
+        
+      } else { // the parent is another internal node or a root with more than 1 key        
+      
+        for (long key: node.keys) {
+          leftNodeNext.keys.add(key);
+        }
+        leftNodeNext = null;
+        // Remove parent with node
+        parent.keys.remove(leftParentIndex);
+        
+        
+        // Keep structure of tree
+        if (ensureCapacity(parent)) {
+          return;
+        } else {
+          deleteHelper(parent, studentID);
+        }
+      } 
+    }
+    // if parent is the root
+      
   }
-  
+
 
   /**
    * Helpful sources: https://www.geeksforgeeks.org/print-leaf-nodes-left-right-binary-tree/
@@ -494,13 +624,52 @@ class BTree {
   }
   
   /**
-   * If node (inner node) does not satisfy capacity constraints,
-   * 
+   * This checks to see if a given node has met the capacity constraints
    * 
    * 
    */
-  private void ensureCapacity(BTreeNode node) {
+  private boolean ensureCapacity(BTreeNode node) {
+    int numOfKeysInNode = node.keys.size();
+    int minNumOfSpots = t;
+    if (numOfKeysInNode >= minNumOfSpots) {
+      return true;
+    }
+    return false; 
+  }
+  
+  private BTreeNode getLeftSibling(BTreeNode node) {
+    BTreeNode parent = this.findParent(this.root, node);
+    int index = findPrePtrIndex(node);
     
+    try {
+      return parent.children.get(index - 1);
+    } catch (Exception e) {
+      return null;
+    }
+  }
+  
+  private BTreeNode getRightSibling(BTreeNode node) {
+   BTreeNode parent = this.findParent(this.root, node);
+   int index = findPrePtrIndex(node);
+      
+    try {
+      return parent.children.get(index + 1);
+    } catch (Exception e) {
+      return null;
+    }
+  }
+  
+  private int findPrePtrIndex(BTreeNode node) {
+    BTreeNode parent = this.findParent(this.root, node);
+    long studentId = node.keys.get(0);
+    int i = 0;
+    // First check is making sure loop is within bounds and the second one is finding the index that belongs to the studentId
+    // or 1 greater than it
+    while ((i + 1 <= parent.keys.size()) && (studentId >= parent.keys.get(i))) {
+      i++;
+    }
+    
+    return i;
   }
 
   private BTreeNode findParent(BTreeNode root, BTreeNode node) {
