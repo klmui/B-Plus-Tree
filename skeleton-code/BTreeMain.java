@@ -39,9 +39,9 @@ public class BTreeMain {
     List<Student> studentsDB = getStudents();
 
     for (Student s : studentsDB) {
-      bTree.insert(s);
-      // FIXME remove before submitting
-      System.out.println(bTree.print());
+//      bTree.insert(s);
+//      // FIXME remove before submitting
+//      System.out.println(bTree.print());
     }
 
 
@@ -68,7 +68,7 @@ public class BTreeMain {
               s2.next();
 
               Student s = new Student(studentId, age, studentName, major, level, recordID);
-              bTree.insert(s);
+              //bTree.insert(s);
 
               break;
             }
