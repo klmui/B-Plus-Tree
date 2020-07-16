@@ -45,11 +45,12 @@ public class BTreeMain {
     }
     
     for (Student s : studentsDB) {
+      System.out.println("Deleting " + s.studentId);
       bTree.delete(s.studentId);
       System.out.println(bTree.print());
     }
 
-
+    System.exit(0); // FIXME remove
 
     /** Start reading the operations now from input file */
     try {
