@@ -41,7 +41,12 @@ public class BTreeMain {
     for (Student s : studentsDB) {
       bTree.insert(s);
       // FIXME remove before submitting
-      //System.out.println(bTree.print());
+      System.out.println(bTree.print());
+    }
+    
+    for (Student s : studentsDB) {
+      bTree.delete(s.studentId);
+      System.out.println(bTree.print());
     }
 
 
@@ -139,10 +144,10 @@ public class BTreeMain {
         // after reading all of the lines in the Students.csv file in a buffer, delete the
         // contents of the file so that it can be easily re-populated.
         if (studentFile.exists() && studentFile.isFile()) {
-          // FIXME studentFile.delete();
+          studentFile.delete();
         }
 
-        // FIXME studentFile.createNewFile();
+        studentFile.createNewFile();
 
       } catch (IOException e) {
         System.out.println("Cannot find Student.csv or cannot read a row.");

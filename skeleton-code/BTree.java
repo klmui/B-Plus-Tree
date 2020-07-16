@@ -3,7 +3,10 @@
  */
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 // import application.BTree.BTreeNode;
@@ -51,19 +54,19 @@ class BTree {
     // check whether the current node has the key
     // if the current node isn't a leaf node, find the child node to move to.
     long recordId = -1;
-    
+
     if (current.leaf) { // base case
       int index = current.keys.indexOf(studentId);
-      
+
       if (index == -1) {
         return recordId;
       } else {
         recordId = current.values.get(index);
         return recordId;
       }
-     
+
     }
-    
+
     if (!current.leaf) {
       if (studentId < current.keys.get(0)) {
         recordId = search(current.children.get(0), studentId);
@@ -96,11 +99,12 @@ class BTree {
       return null;
     }
   }
-  
+
   // index in searchNode with the element
-  // check method sees if a given node meets the minimum requirements for cap by ensureCapacity method
+  // check method sees if a given node meets the minimum requirements for cap by ensureCapacity
+  // method
   private int findIndex(BTreeNode current, long studentId) {
-    //BTreeNode nodeWithId = searchNode(root, studentId);
+    // BTreeNode nodeWithId = searchNode(root, studentId);
     for (int i = 0; i < current.keys.size(); i++) {
       if (current.keys.get(i) == studentId) {
         return i;
@@ -108,7 +112,7 @@ class BTree {
     }
     return -1;
   }
-  
+
   BTree insert(Student student) {
     /**
      * TODO: Implement this function to insert in the B+Tree. Also, insert in student.csv after
@@ -120,6 +124,8 @@ class BTree {
       this.root = new BTreeNode(t, true);
       this.root.keys.add(0, student.studentId);
       this.root.values.add(0, student.recordId);
+
+      insertToCSV("Student.csv", student);
 
       // TODO write to CSV
       System.out.println("Student " + student.studentName + " (ID: " + student.studentId + ")"
@@ -178,9 +184,11 @@ class BTree {
         }
       }
     }
-    
+
     if (current.leaf) { // if the current node is a leaf node
       insertKeyValue(current, id, recordId);
+      System.out.println("Writing to CSV");
+      insertToCSV("Student.csv", student);
 
       // TODO write to CSV
 
@@ -207,11 +215,11 @@ class BTree {
     // search to see if the node exists: search(BTreeNode current, long studentId)
     long exists = search(studentId);
     BTreeNode nodeWithID = searchNode(root, studentId);
-    
-    String filePath = "Student.csv";
-    System.out.println("filePath: " + filePath);
-    writeCSV(filePath, studentId);
-    
+
+    // String filePath = "Student.csv";
+    // System.out.println("filePath: " + filePath);
+    // writeCSV(filePath, studentId);
+
     if (exists == -1) { // student id is not found
       return false;
     }
@@ -222,57 +230,61 @@ class BTree {
       // find studentId and remove from b-tree
       int index = root.keys.indexOf(studentId);
       root.keys.remove(index);
-      
+
+
+      deleteFromCSV("Student.csv", studentId);
+
       // TODO: remove from csv
-      
+
       return true;
-    } 
+    }
 
     BTreeNode currentNode = this.root;
-    
+
     while ((!currentNode.equals(nodeWithID) && (!currentNode.leaf))) {
       int pointerIndex = findPtrIndexGivenAnId(currentNode, studentId);
       BTreeNode childNode = currentNode.children.get(pointerIndex);
       currentNode = childNode;
-      
+
     }
     deleteHelper(currentNode, studentId);
     return true;
   }
-  
-  
+
+
   /**
    * Delete node with studentId and keep structure of tree.
    * 
    * @param node
    * @param studentID
-   * @param index: index of pointer
+   * @param           index: index of pointer
    */
   private void deleteHelper(BTreeNode node, long studentID) {
     BTreeNode current = node;
-    
-    // base case:  current node is the root, so we are done
-    if(node.equals(root)) {
+
+    // base case: current node is the root, so we are done
+    if (node.equals(root)) {
       return;
     }
-    
+
     // base case: leaf node - found the node that contains the studentID as a key
     if (current.leaf == true) {
       // find studentID
       int indexInLeaf = current.keys.indexOf(studentID);
       // delete it
       current.keys.remove(indexInLeaf);
+      deleteFromCSV("Student.csv", studentID);
     }
-    
+
     // ensure node meets min occupancy req
     if (ensureCapacity(node)) {
       return;
     }
-      
-      
+
+
     // min occupancy rate isn't met
     // see about redistribution:
-    
+
     // 1st attempt: Look right and try to take keys
     BTreeNode rightNode = this.getRightSibling(node);
     if (rightNode != null && this.ensureCapacity(rightNode)) {
@@ -280,15 +292,15 @@ class BTree {
       long firstStudentIdInRightNode = rightNode.keys.get(0);
       rightNode.keys.remove(0);
       node.keys.add(firstStudentIdInRightNode);
-      
+
       // Update parent node
       BTreeNode parent = this.findParent(root, node);
       int parentPtrIndex = this.findPrePtrIndex(node);
       parent.keys.set(parentPtrIndex, firstStudentIdInRightNode);
-      
+
       return;
     }
-    
+
     // 2nd attempt: Look left and try to take keys
     BTreeNode leftNode = this.getLeftSibling(node);
     if (leftNode != null && this.ensureCapacity(leftNode)) {
@@ -296,110 +308,112 @@ class BTree {
       long firstStudentIdInLeftNode = leftNode.keys.get(0);
       leftNode.keys.remove(0);
       node.keys.add(0, firstStudentIdInLeftNode);
-      
+
       // Update parent node
       BTreeNode parent = this.findParent(root, node);
       int parentPtrIndex = this.findPrePtrIndex(node);
       parent.keys.set(parentPtrIndex, firstStudentIdInLeftNode);
-      
+
       return;
     }
-    
+
     // 3rd attempt: merge right node into left node
     if (rightNode != null) {
-        BTreeNode parent = this.findParent(root, node);
-        int oldParentIndex = findPrePtrIndex(node);
-        
-        // Store next ref ptr from rightNode and update node's next ptr
-        BTreeNode rightNodeNext = rightNode.next;
-        node.next = rightNodeNext;
-        int newParentIndex = findPrePtrIndex(rightNode);
-        
-        if (parent.equals(root) && (root.getNumKeys() == 1 || root.getNumChildren() <= 2)) {
-          // RED0 THE ROOT AND UPDATE IT
-          // we are an internal node and we have a right node we are merging on
-          // Bring down key from root into oldParentIndex and merge, and reassign root
+      BTreeNode parent = this.findParent(root, node);
+      int oldParentIndex = findPrePtrIndex(node);
 
-          long rootKey = root.keys.get(0); // this is the only element in the root
-          // our parent is the root:
-          // merging will lead to problems with just 1 child
-          // we need to reassign our root
-          node.keys.add(rootKey); // we add this root there (in terms of order from least to greatest)
-          
-          // Left: node values, Middle: root key, Right: right node values
-          for (long key: rightNode.keys) {
-            node.keys.add(key);
-          }
-          // we reassign the root now to be this value:
-          this.root = node;
-          return;
-        } else { // the parent is another internal node or a root with more than 1 key 
-        
-          // set the value of the node's pointer to be the rightNode pointer (30, 30 instead of 27, 30)
-          parent.keys.set(oldParentIndex, parent.keys.get(newParentIndex));
-          
-          // Putting all values from right node into node
-          for (long key : rightNode.keys) {
-            node.keys.add(key);
-          }
-          
-          rightNode = null;
-          
-          // Remove parent with node
-          parent.keys.remove(newParentIndex);
-          
-          // Keep structure of tree
-          if (ensureCapacity(parent)) {
-            return;
-          } else {
-            deleteHelper(parent, studentID);
-          }
-          
-          return;
-        }
-    }
-      
-    // 4th attempt: merge left node into right node
-    if (leftNode != null) {  // move entries from rightmost node into the left node
-        BTreeNode parent = this.findParent(root, node);
-        int oldParentIndex = findPrePtrIndex(node);
-        int leftParentIndex = oldParentIndex - 1;
-   
-        BTreeNode leftNodeNext = parent.children.get(leftParentIndex); // left node
-      
+      // Store next ref ptr from rightNode and update node's next ptr
+      BTreeNode rightNodeNext = rightNode.next;
+      node.next = rightNodeNext;
+      int newParentIndex = findPrePtrIndex(rightNode);
+
       if (parent.equals(root) && (root.getNumKeys() == 1 || root.getNumChildren() <= 2)) {
-        
+        // RED0 THE ROOT AND UPDATE IT
+        // we are an internal node and we have a right node we are merging on
+        // Bring down key from root into oldParentIndex and merge, and reassign root
+
         long rootKey = root.keys.get(0); // this is the only element in the root
         // our parent is the root:
         // merging will lead to problems with just 1 child
         // we need to reassign our root
-        leftNodeNext.keys.add(rootKey); // we add this root there (in terms of order from least to greatest)
-        
-        for (long key: node.keys) {
-          leftNodeNext.keys.add(key);
+        node.keys.add(rootKey); // we add this root there (in terms of order from least to greatest)
+
+        // Left: node values, Middle: root key, Right: right node values
+        for (long key : rightNode.keys) {
+          node.keys.add(key);
         }
-       
         // we reassign the root now to be this value:
-        this.root = leftNodeNext;
+        this.root = node;
         return;
-      } else { // the parent is another internal node or a root with more than 1 key        
-      
-        for (long key: node.keys) {
-          leftNodeNext.keys.add(key);
+      } else { // the parent is another internal node or a root with more than 1 key
+
+        // set the value of the node's pointer to be the rightNode pointer (30, 30 instead of 27,
+        // 30)
+        parent.keys.set(oldParentIndex, parent.keys.get(newParentIndex));
+
+        // Putting all values from right node into node
+        for (long key : rightNode.keys) {
+          node.keys.add(key);
         }
-        node = null;
-        
+
+        rightNode = null;
+
         // Remove parent with node
-        parent.keys.remove(leftParentIndex);
-        
+        parent.keys.remove(newParentIndex);
+
         // Keep structure of tree
         if (ensureCapacity(parent)) {
           return;
         } else {
           deleteHelper(parent, studentID);
         }
-      } 
-    }      
+
+        return;
+      }
+    }
+
+    // 4th attempt: merge left node into right node
+    if (leftNode != null) { // move entries from rightmost node into the left node
+      BTreeNode parent = this.findParent(root, node);
+      int oldParentIndex = findPrePtrIndex(node);
+      int leftParentIndex = oldParentIndex - 1;
+
+      BTreeNode leftNodeNext = parent.children.get(leftParentIndex); // left node
+
+      if (parent.equals(root) && (root.getNumKeys() == 1 || root.getNumChildren() <= 2)) {
+
+        long rootKey = root.keys.get(0); // this is the only element in the root
+        // our parent is the root:
+        // merging will lead to problems with just 1 child
+        // we need to reassign our root
+        leftNodeNext.keys.add(rootKey); // we add this root there (in terms of order from least to
+                                        // greatest)
+
+        for (long key : node.keys) {
+          leftNodeNext.keys.add(key);
+        }
+
+        // we reassign the root now to be this value:
+        this.root = leftNodeNext;
+        return;
+      } else { // the parent is another internal node or a root with more than 1 key
+
+        for (long key : node.keys) {
+          leftNodeNext.keys.add(key);
+        }
+        node = null;
+
+        // Remove parent with node
+        parent.keys.remove(leftParentIndex);
+
+        // Keep structure of tree
+        if (ensureCapacity(parent)) {
+          return;
+        } else {
+          deleteHelper(parent, studentID);
+        }
+      }
+    }
   }
 
 
@@ -527,7 +541,7 @@ class BTree {
       addChild(parent, newNode);
     }
   }
-  
+
   /**
    * This checks to see if a given node has met the capacity constraints
    * 
@@ -539,54 +553,56 @@ class BTree {
     if (numOfKeysInNode >= minNumOfSpots) {
       return true;
     }
-    return false; 
+    return false;
   }
-  
+
   private BTreeNode getLeftSibling(BTreeNode node) {
     BTreeNode parent = this.findParent(this.root, node);
     int index = findPrePtrIndex(node);
-    
+
     try {
       return parent.children.get(index - 1);
     } catch (Exception e) {
       return null;
     }
   }
-  
+
   private BTreeNode getRightSibling(BTreeNode node) {
-   BTreeNode parent = this.findParent(this.root, node);
-   int index = findPrePtrIndex(node);
-      
+    BTreeNode parent = this.findParent(this.root, node);
+    int index = findPrePtrIndex(node);
+
     try {
       return parent.children.get(index + 1);
     } catch (Exception e) {
       return null;
     }
   }
-  
-  
+
+
   private int findPtrIndexGivenAnId(BTreeNode node, long studentId) {
     int i = 0;
-    // First check is making sure loop is within bounds and the second one is finding the index that belongs to the studentId
+    // First check is making sure loop is within bounds and the second one is finding the index that
+    // belongs to the studentId
     // or 1 greater than it
     while ((i + 1 <= node.keys.size()) && (studentId >= node.keys.get(i))) {
       i++;
     }
-    
+
     return i;
   }
-  
-  
+
+
   private int findPrePtrIndex(BTreeNode node) {
     BTreeNode parent = this.findParent(this.root, node);
     long studentId = node.keys.get(0);
     int i = 0;
-    // First check is making sure loop is within bounds and the second one is finding the index that belongs to the studentId
+    // First check is making sure loop is within bounds and the second one is finding the index that
+    // belongs to the studentId
     // or 1 greater than it
     while ((i + 1 <= parent.keys.size()) && (studentId >= parent.keys.get(i))) {
       i++;
     }
-    
+
     return i;
   }
 
@@ -713,19 +729,20 @@ class BTree {
 
     }
   }
-  
-  
+
+
   /**
-   * Please note that this method goes to the bottom left and finds the leftmost
-   * leaf node (the smallest leaf node) in the BTree. 
-   * If there is only 1 leaf node (the root is the leaf), this returns the root
+   * Please note that this method goes to the bottom left and finds the leftmost leaf node (the
+   * smallest leaf node) in the BTree. If there is only 1 leaf node (the root is the leaf), this
+   * returns the root
+   * 
    * @return
    */
   private BTreeNode findLeftMostLeafNode() {
     System.out.println("findLeftMostLeafNode()");
     // the root is the only leaf node so we return this
     if (root.getNumChildren() == 0 || root.leaf == true) {
-      return root; 
+      return root;
     } else {
       // the root has children, so we keep going left (index 0):
       BTreeNode current = root.children.get(0);
@@ -734,81 +751,183 @@ class BTree {
       }
       return current;
     }
-    
-    
+
+
   }
-  
-  
+
+
   /**
-   * Please note that this method writes out the Btree to a CSV.  
-   * It only skips over the student id that is to be deleted if there is one
-   * StudentIDToDelete is -1 is we do not want to delete anything from the Tree
-   * Otherwise, it will have the Student ID to Delete
+   * Please note that this method writes out the Btree to a CSV. It only skips over the student id
+   * that is to be deleted if there is one StudentIDToDelete is -1 is we do not want to delete
+   * anything from the Tree Otherwise, it will have the Student ID to Delete
    */
   private void writeCSV(String filePath, long StudentIDToDelete) {
     try {
-    FileWriter csvWriter = new FileWriter(filePath);
-    
-    csvWriter.append("StudentID");
-    csvWriter.append(","); // comma-separated
-    csvWriter.append("RecordID");
-    csvWriter.append("\n");
-    // please go all the way to the bottom left of the tree    
-    // all entries (and student records) will be in leaf node of B+ tree
-    // the left most node has the start
-    BTreeNode leftmostLeafNode = findLeftMostLeafNode(); 
-    //if the root is the only node (and is therefore also the leaf node) 
-    
-    if (leftmostLeafNode.equals(root)) {
-      for (int i = 0; i < root.getNumKeys(); i++) {
-        long studentID = root.keys.get(i); 
-        if (studentID == StudentIDToDelete) { // we skip writing out this entry
-          continue;
-        } else {
-        long recordID = root.values.get(i); 
-        char studentIdChar = (char) studentID;
-        char recordIdChar = (char) recordID;
-        csvWriter.append(studentIdChar);
-        csvWriter.append(",");
-        csvWriter.append(recordIdChar);
-        csvWriter.append("\n");
-        }
-        
-      }
-    } else {
-      BTreeNode current = leftmostLeafNode; // we start with this leftmost node and then keep going to next
-      while (current.next != null) {
-        for (int i = 0; i < current.keys.size(); i++) {
-          long studentID = root.keys.get(i); 
+      FileWriter csvWriter = new FileWriter(filePath);
+
+      csvWriter.append("StudentID");
+      csvWriter.append(","); // comma-separated
+      csvWriter.append("RecordID");
+      csvWriter.append("\n");
+      // please go all the way to the bottom left of the tree
+      // all entries (and student records) will be in leaf node of B+ tree
+      // the left most node has the start
+      BTreeNode leftmostLeafNode = findLeftMostLeafNode();
+      // if the root is the only node (and is therefore also the leaf node)
+
+      if (leftmostLeafNode.equals(root)) {
+        for (int i = 0; i < root.getNumKeys(); i++) {
+          long studentID = root.keys.get(i);
           if (studentID == StudentIDToDelete) { // we skip writing out this entry
             continue;
           } else {
-          long recordID = root.values.get(i); 
-          char studentIdChar = (char) studentID;
-          char recordIdChar = (char) recordID;
-          csvWriter.append(studentIdChar);
-          csvWriter.append(",");
-          csvWriter.append(recordIdChar);
-          csvWriter.append("\n");
+            long recordID = root.values.get(i);
+            char studentIdChar = (char) studentID;
+            char recordIdChar = (char) recordID;
+            csvWriter.append(studentIdChar);
+            csvWriter.append(",");
+            csvWriter.append(recordIdChar);
+            csvWriter.append("\n");
           }
+
         }
-        current = current.next; // we go to the next leaf node (the right node)
-        
+      } else {
+        BTreeNode current = leftmostLeafNode; // we start with this leftmost node and then keep
+                                              // going to next
+        while (current.next != null) {
+          for (int i = 0; i < current.keys.size(); i++) {
+            long studentID = root.keys.get(i);
+            if (studentID == StudentIDToDelete) { // we skip writing out this entry
+              continue;
+            } else {
+              long recordID = root.values.get(i);
+              char studentIdChar = (char) studentID;
+              char recordIdChar = (char) recordID;
+              csvWriter.append(studentIdChar);
+              csvWriter.append(",");
+              csvWriter.append(recordIdChar);
+              csvWriter.append("\n");
+            }
+          }
+          current = current.next; // we go to the next leaf node (the right node)
+
+        }
       }
-    }
-    csvWriter.close();
-      System.out.println(":) Please note that we have written the (studentID, recordID) results to: " + filePath);
+      csvWriter.close();
+      System.out.println(
+          ":) Please note that we have written the (studentID, recordID) results to: " + filePath);
     } catch (Exception e) {
-      System.out.println("Error :( Please note we were unable to write the B+ Tree out to: " + filePath);
+      System.out
+          .println("Error :( Please note we were unable to write the B+ Tree out to: " + filePath);
 
       System.out.println(e.getStackTrace());
-    } 
-    
-    
-    
+    }
   }
+
+  private void insertToCSV(String filepath, Student student) {
+    System.out.println("INSERTED STUDENT");
+    try {
+      FileWriter csvWriter = new FileWriter(filepath, true);
+
+      long studentId = student.studentId;
+      long recordId = student.recordId;
+      int age = student.age;
+      String studentName = student.studentName;
+      String major = student.major;
+      String level = student.level;
+
+      csvWriter.append(Long.toString(studentId));
+      csvWriter.append(",");
+      csvWriter.append(studentName);
+      csvWriter.append(",");
+      csvWriter.append(major);
+      csvWriter.append(",");
+      csvWriter.append(level);
+      csvWriter.append(",");
+      csvWriter.append(Integer.toString(age));
+      csvWriter.append(",");
+      csvWriter.append(Long.toString(recordId));
+      csvWriter.append("\n");
+
+      csvWriter.flush();
+      csvWriter.close();
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
   }
-  
-  
-  
+
+  /**
+   * Write all data from csv file to a list and removes row with the studentId. Then, it inserts
+   * everything back to the csv file.
+   * 
+   * @param filepath
+   * @param studentId
+   */
+  private void deleteFromCSV(String filepath, long studentId) {
+    System.out.println("DELETED STUDENT");
+    List<Student> studentList = new ArrayList<>();
+
+
+
+    File studentFile = new File("Student.csv");
+
+
+
+    if (studentFile.canRead()) {
+      try {
+        BufferedReader studentReader = new BufferedReader(new FileReader(studentFile));
+        String row;
+        while ((row = studentReader.readLine()) != null) { // read each row of Student.csv
+          String[] data = row.split(","); // split the data in the row by comma
+
+
+
+          // save each value (ID:long, age:int, name:String, major:String, level:String, recordID:
+          // long)
+          long id = Long.parseLong(data[0]);
+          String name = data[1];
+          String major = data[2];
+          String level = data[3];
+          int age = Integer.parseInt(data[4]);
+          long recordId = Long.parseLong(data[5]);
+
+
+
+          // create a new student and add it to studentList
+          Student stu = new Student(id, age, name, major, level, recordId);
+
+          if (stu.studentId == studentId) {
+            continue;
+          }
+          studentList.add(stu);
+        }
+
+
+
+        studentReader.close();
+
+        // clear the file
+        // after reading all of the lines in the Students.csv file in a buffer, delete the
+        // contents of the file so that it can be easily re-populated.
+        if (studentFile.exists() && studentFile.isFile()) {
+          studentFile.delete();
+        }
+
+        studentFile.createNewFile();
+
+        // Write back to csv file
+        for (Student student : studentList) {
+          this.insertToCSV(filepath, student);
+        }
+
+
+
+      } catch (IOException e) {
+        System.out.println("Cannot find Student.csv or cannot read a row.");
+        // return null;
+      }
+    }
+  }
+}
+
 
